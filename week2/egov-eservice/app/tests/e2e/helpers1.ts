@@ -5,6 +5,11 @@ import {
 import { deflateSync } from 'node:zlib';
 
 export { expect };
+
+// Lab 4: PW_VIDEO_DIR set → record video of every browser window, one folder per TC (no effect on checks).
+const videoOpts = () => process.env.PW_VIDEO_DIR
+  ? { recordVideo: { dir: `${process.env.PW_VIDEO_DIR}/${base.info().title.split(' ')[0]}`, size: { width: 1024, height: 640 } } }
+  : {};
 export const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 export const INITIAL_NOW = '2026-12-01T09:00:00+07:00';
 export const CITIZENS = {
@@ -74,7 +79,10 @@ export type Session = { context: BrowserContext; page: Page; api: APIRequestCont
 export class Harness {
   private contexts: BrowserContext[] = [];
   constructor(private browser: Browser) {}
+  // Wait until every open page is quiet first: a request still in flight could reach the server after the reset
+  // and create notifications at the reset clock (race seen in Lab 5, TC-NOTI-02 under B03,B07).
   async close() {
+    await Promise.all(this.contexts.map(context => Promise.all(context.pages().map(p => p.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {})))));
     await Promise.all(this.contexts.map(context => context.close())); this.contexts = [];
   }
   async reset() {
@@ -91,7 +99,7 @@ export class Harness {
     finally { await api.dispose(); }
   }
   async anonymous(): Promise<Session> {
-    const context = await this.browser.newContext({ baseURL: BASE_URL }); this.contexts.push(context);
+    const context = await this.browser.newContext({ baseURL: BASE_URL, ...videoOpts() }); this.contexts.push(context);
     return { context, page: await context.newPage(), api: context.request };
   }
   async citizen(idNo: string = CITIZENS.somchai) {

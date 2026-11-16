@@ -6,6 +6,11 @@ import {
 import { readFile, readdir, stat } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 
+// Lab 4: PW_VIDEO_DIR set → record video of every browser window, one folder per TC (no effect on checks).
+const videoOpts = () => process.env.PW_VIDEO_DIR
+  ? { recordVideo: { dir: `${process.env.PW_VIDEO_DIR}/${base.info().title.split(' ')[0]}`, size: { width: 1024, height: 640 } } }
+  : {};
+
 // Oracles and selectors come exclusively from CONTRACT / TEST-DATA / TEST-PLAN.
 export const NOW = '2026-12-01T09:00:00+07:00';
 export const SOMCHAI = '1101700123456';
@@ -124,6 +129,10 @@ export class App {
   }
   async reset() {
     // Every RESET invalidates ALL server sessions. Never reuse an old context afterward.
+    // Wait until every open page is quiet first: a request still in flight could reach the server after the reset
+    // and create notifications at the reset clock (race seen in Lab 5, TC-NOTI-02 under B03,B07).
+    await Promise.all([...this.sessions.values()].map(s =>
+      Promise.all(s.context.pages().map(p => p.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {})))));
     for (const s of this.sessions.values()) await s.context.close();
     this.sessions.clear();
     expect(await json(await this.control.post('/api/test/reset'))).toEqual({ ok: true, now: NOW });
@@ -138,7 +147,7 @@ export class App {
       this.sessions.delete(key);
     }
     if (!this.sessions.has(key)) {
-      const context = await this.browser.newContext({ baseURL: this.baseURL, acceptDownloads: true });
+      const context = await this.browser.newContext({ baseURL: this.baseURL, acceptDownloads: true, ...videoOpts() });
       this.sessions.set(key, { context, page: await context.newPage(), api: context.request });
     }
     return this.sessions.get(key)!;
