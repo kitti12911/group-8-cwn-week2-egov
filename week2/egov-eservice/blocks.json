@@ -1,0 +1,211 @@
+{
+ "goal": "Central e-Service web for a fictional city, built to /workspace/egov-brief (REQUIREMENTS CONTRACT TEST-DATA DECISIONS), Docker Compose one command, TEST_MODE=1 + BUG_MODE per BUGS.md, Playwright for all 51 TC in TEST-PLAN",
+ "name": "egov-eservice",
+ "blocks": [
+  {
+   "id": "B01",
+   "title": "Skeleton + compose + DB + test hooks",
+   "size": "L",
+   "depends_on": [],
+   "skill": "yolo",
+   "difficulty": 3,
+   "output": "docker-compose.yml",
+   "done": "docker compose up → GET /api/health 200; TEST_MODE=1 opens /api/test/reset + /api/test/clock, unset → 404; reset twice = same DB",
+   "detail": "Read /workspace/egov-brief/README.md CONTRACT.md §0 §1 §6 §8, DECISIONS.md §0 §14 §15, REQUIREMENTS.md NFR. Stack: Node 20 + Express + better-sqlite3 (DB_PATH) + EJS views, body limit 6 MB, TZ Asia/Bangkok. Make shared helpers: clock (test clock, never Date.now in rules), bugMode('B03'), audit.log(), maskId(), error {code,message}. Tables for all entities. FR-28.",
+   "timeout": 2700
+  },
+  {
+   "id": "B02",
+   "title": "Seed data from TEST-DATA",
+   "size": "M",
+   "depends_on": [
+    "B01"
+   ],
+   "skill": "cyolo",
+   "difficulty": 2,
+   "output": "server/seed.js",
+   "done": "after reset: 30 cases + 2 drafts, accounts, services, holidays, payments, document, notifications match TEST-DATA §1-§12",
+   "detail": "Read /workspace/egov-brief/TEST-DATA.md (all), DECISIONS.md §17. Seed exactly, never adjust numbers.",
+   "timeout": 1800
+  },
+  {
+   "id": "B03",
+   "title": "Rules: fee · SLA working days · levels",
+   "size": "M",
+   "depends_on": [
+    "B01"
+   ],
+   "skill": "review",
+   "difficulty": 4,
+   "output": "server/rules.js",
+   "done": "unit tests pass every boundary in BR-04 BR-05 BR-12 BR-13 BR-14 and TEST-PLAN SLA-01 table; BUG_MODE B01 B03 B04 change only their rule",
+   "detail": "Read /workspace/egov-brief/REQUIREMENTS.md BR-04/05/11-14/16, DECISIONS.md §0 §3 §8 §18, TEST-PLAN.md §3 §8, BUGS.md B01 B03 B04. FR-19. Pure functions + tests in server/rules.test.js.",
+   "worker": "yolo",
+   "timeout": 1800
+  },
+  {
+   "id": "B04",
+   "title": "Auth + register + RBAC",
+   "size": "M",
+   "depends_on": [
+    "B01"
+   ],
+   "skill": "yolo",
+   "difficulty": 3,
+   "output": "server/auth.js",
+   "done": "citizen ID+OTP 123456, first-visit register, staff login, each route of CONTRACT §1 gives 403/404 as listed; BUG_MODE B06 opens IDOR",
+   "detail": "Read /workspace/egov-brief/REQUIREMENTS.md FR-01-03 BR-21/22, DECISIONS.md §1 §2, CONTRACT.md §1 §2 (login/register testids) §5, BUGS.md B06. Checksum of ID.",
+   "timeout": 1800
+  },
+  {
+   "id": "B05",
+   "title": "Citizen apply: forms · upload · drafts",
+   "size": "L",
+   "depends_on": [
+    "B03",
+    "B04"
+   ],
+   "skill": "yolo",
+   "difficulty": 3,
+   "output": "server/citizen-apply.js",
+   "done": "3-step form per service shows fee-total live, uploads checked by content/size/count, missing docs named, drafts save + reopen ?draft=; BUG_MODE B02",
+   "detail": "Read /workspace/egov-brief/REQUIREMENTS.md FR-04-07 BR-04-10, DECISIONS.md §3 §4, CONTRACT.md §2 (citizen pages) §5, TEST-DATA.md §11, BUGS.md B02. Uses rules.js for fee.",
+   "timeout": 2700
+  },
+  {
+   "id": "B06",
+   "title": "Pay QR · case no · my cases · cancel · resubmit",
+   "size": "M",
+   "depends_on": [
+    "B03",
+    "B05"
+   ],
+   "skill": "yolo",
+   "difficulty": 3,
+   "output": "server/payments.js",
+   "done": "QR pay hook → case no EG-2569-xxxxxx + receipt RC-…, locked amount, idempotent callback, QR expires at 15:00; my cases timeline; cancel/409; resubmit ≤168 h else auto-cancel; BUG_MODE B05",
+   "detail": "Read /workspace/egov-brief/REQUIREMENTS.md FR-08-11 BR-11 BR-15 BR-22, DECISIONS.md §5-§7, CONTRACT.md §2 §6 (pay API), BUGS.md B05.",
+   "timeout": 1800
+  },
+  {
+   "id": "B07",
+   "title": "Officer workflow: queue · claim · return · route · approve",
+   "size": "L",
+   "depends_on": [
+    "B03",
+    "B04"
+   ],
+   "skill": "yolo",
+   "difficulty": 4,
+   "output": "server/officer.js",
+   "done": "queue per dept sorted by due then no; one holder, ≤10 in hand; return ≤2; auto routing; approve by authority; head approvals; masked ID + unmask with reason + audit; attachments by role; BUG_MODE B07 B08 B09 B11 B12",
+   "detail": "Read /workspace/egov-brief/REQUIREMENTS.md FR-12-16 FR-21 FR-29 BR-16-20 BR-23, DECISIONS.md §9 §10 §11, CONTRACT.md §2 (officer/head) §6, BUGS.md B07 B08 B09 B11 B12.",
+   "timeout": 2700
+  },
+  {
+   "id": "B08",
+   "title": "Digital document · PDF · /verify",
+   "size": "M",
+   "depends_on": [
+    "B07"
+   ],
+   "skill": "yolo",
+   "difficulty": 3,
+   "output": "server/documents.js",
+   "done": "issue gives doc no + HMAC-SHA256 signature + QR code; citizen downloads PDF; /verify/<code> works without login, masked name, tamper hook → invalid",
+   "detail": "Read /workspace/egov-brief/REQUIREMENTS.md FR-17 FR-18, DECISIONS.md §10, CONTRACT.md §2 (doc/verify) §6 §8 (tamper), TEST-DATA.md §5.",
+   "timeout": 1800
+  },
+  {
+   "id": "B09",
+   "title": "Notifications (bell)",
+   "size": "M",
+   "depends_on": [
+    "B03",
+    "B07"
+   ],
+   "skill": "yolo",
+   "difficulty": 3,
+   "output": "server/notifications.js",
+   "done": "every HTTP request (not /api/test) checks SLA levels; right receivers (holder / dept / head / issuer, overdue also head); no repeats; matches TEST-DATA §8 after reset",
+   "detail": "Read /workspace/egov-brief/REQUIREMENTS.md FR-20 BR-14, DECISIONS.md §8, CONTRACT.md §0 item 7 §2 (bell), TEST-DATA.md §8, TEST-PLAN.md §9.",
+   "timeout": 1800
+  },
+  {
+   "id": "B10",
+   "title": "Dashboard KPIs + Excel/PDF export",
+   "size": "M",
+   "depends_on": [
+    "B02",
+    "B03"
+   ],
+   "skill": "review",
+   "difficulty": 4,
+   "output": "server/dashboard.js",
+   "done": "seed numbers equal TEST-DATA §7 (Nov 85.7%, Dec –, backlog 21, overdue 1, 16:30:00 counts on time); month/service filter; xlsx + pdf export format of CONTRACT §7; BUG_MODE B10",
+   "detail": "Read /workspace/egov-brief/REQUIREMENTS.md FR-22 FR-23 BR-25, DECISIONS.md §12 §18, CONTRACT.md §2 (dashboard) §7, TEST-DATA.md §7, BUGS.md B10.",
+   "worker": "yolo",
+   "timeout": 1800
+  },
+  {
+   "id": "B11",
+   "title": "Audit trail page + admin pages",
+   "size": "M",
+   "depends_on": [
+    "B01"
+   ],
+   "skill": "yolo",
+   "difficulty": 2,
+   "output": "server/admin-audit.js",
+   "done": "/audit filters + CSV, read-only, 10 event types; admin edits fee 0-100,000 and SLA 1-60 (INVALID_FEE/INVALID_SLA), holidays (DUPLICATE_HOLIDAY), users (SELF_ROLE_CHANGE)",
+   "detail": "Read /workspace/egov-brief/REQUIREMENTS.md FR-24-27 BR-27 BR-28, DECISIONS.md §13 §18, CONTRACT.md §2 (audit/admin) §5 §7.",
+   "timeout": 1800
+  },
+  {
+   "id": "B12",
+   "title": "Playwright part 1: AUTH→SLA",
+   "size": "L",
+   "depends_on": [],
+   "skill": "cyolo",
+   "difficulty": 3,
+   "output": "tests/e2e/part1.spec.ts",
+   "done": "one test per TC of TEST-PLAN §2-§8, name starts with TC id, expected values copied exactly; reset + new login each test",
+   "detail": "Read ONLY /workspace/egov-brief/TEST-PLAN.md CONTRACT.md TEST-DATA.md (no web code). Own helpers tests/e2e/helpers1.ts, playwright.config.ts with BASE_URL env.",
+   "timeout": 2700
+  },
+  {
+   "id": "B13",
+   "title": "Playwright part 2: NOTI→NFR",
+   "size": "L",
+   "depends_on": [],
+   "skill": "cyolo",
+   "difficulty": 3,
+   "output": "tests/e2e/part2.spec.ts",
+   "done": "one test per TC of TEST-PLAN §9-§16, name starts with TC id, expected values copied exactly; together with part 1 = all 51 TC",
+   "detail": "Read ONLY /workspace/egov-brief/TEST-PLAN.md CONTRACT.md TEST-DATA.md (no web code). Own helpers tests/e2e/helpers2.ts; do not write playwright.config.ts.",
+   "timeout": 2700
+  },
+  {
+   "id": "B14",
+   "title": "Integrate + full Playwright + BUG_MODE ×12",
+   "size": "L",
+   "depends_on": [
+    "B02",
+    "B06",
+    "B08",
+    "B09",
+    "B10",
+    "B11",
+    "B12",
+    "B13"
+   ],
+   "skill": "yolo",
+   "difficulty": 4,
+   "output": "TEST-REPORT.md",
+   "done": "docker compose up + TEST_MODE=1: 51/51 pass; each BUG_MODE B01-B12 makes its BUGS.md TC fail; TEST-REPORT.md has both tables",
+   "detail": "Read /workspace/egov-brief/TEST-PLAN.md BUGS.md CONTRACT.md. Fix web (not expected values) when a test fails; note brief problems as questions.",
+   "exclusive": true,
+   "timeout": 3600
+  }
+ ]
+}
