@@ -9,7 +9,7 @@ services:
     image: egov-eservice:local
     container_name: egov-eservice-web
     ports:
-      - "${HOST_PORT:-3000}:3000"
+      - "127.0.0.1:${HOST_PORT:-3000}:3000"   # this computer only
     environment:
       TEST_MODE: "${TEST_MODE:-}"
       BUG_MODE: "${BUG_MODE:-}"
