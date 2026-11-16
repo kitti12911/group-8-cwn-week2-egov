@@ -1,0 +1,55 @@
+<%- include('partials/head') %>
+<style>
+  .tabs { display: flex; gap: .5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+  .tabs [role=tab][aria-selected=false] { background: #fff; color: #0b4f9c; border-color: #0b4f9c; }
+</style>
+<h1>เข้าสู่ระบบ</h1>
+<div class="card login-card">
+  <div role="tablist" aria-label="ประเภทผู้ใช้" class="tabs">
+    <button type="button" role="tab" id="tab-citizen" data-testid="login-tab-citizen" aria-controls="panel-citizen"
+      aria-selected="<%= tab === 'citizen' %>" <% if (tab !== 'citizen') { %>tabindex="-1"<% } %>>ประชาชน (ThaiD)</button>
+    <button type="button" role="tab" id="tab-staff" data-testid="login-tab-staff" aria-controls="panel-staff"
+      aria-selected="<%= tab === 'staff' %>" <% if (tab !== 'staff') { %>tabindex="-1"<% } %>>เจ้าหน้าที่</button>
+  </div>
+
+  <section role="tabpanel" id="panel-citizen" aria-labelledby="tab-citizen" <% if (tab !== 'citizen') { %>hidden<% } %>>
+    <form id="thaid-form" novalidate>
+      <label for="thaid-id">เลขบัตรประชาชน 13 หลัก</label>
+      <input type="text" id="thaid-id" name="idNo" inputmode="numeric" autocomplete="off" data-testid="thaid-id-input"
+        aria-describedby="thaid-error">
+      <p class="field-error" id="thaid-error" data-testid="thaid-error" role="alert" hidden></p>
+      <div class="actions"><button type="submit" data-testid="thaid-submit">เข้าสู่ระบบด้วย ThaiD (จำลอง)</button></div>
+    </form>
+
+    <div class="alert alert-error" id="lock-box" role="alert" hidden>
+      <p data-testid="lock-message">ผิดเกินกำหนด เลขบัตรนี้ถูกล็อก 15 นาที</p>
+      <p>ปลดล็อกเวลา <time data-testid="lock-until" id="lock-until" data-iso="" datetime=""></time></p>
+    </div>
+
+    <div data-testid="otp-step" id="otp-step" hidden>
+      <form id="otp-form" novalidate>
+        <p class="muted">ส่งรหัส OTP ไปยังแอป ThaiD (จำลอง) แล้ว</p>
+        <label for="otp">รหัส OTP 6 หลัก</label>
+        <input type="text" id="otp" name="otp" inputmode="numeric" autocomplete="one-time-code" data-testid="otp-input"
+          aria-describedby="otp-error otp-left">
+        <p class="field-error" id="otp-error" data-testid="otp-error" role="alert" hidden></p>
+        <p class="muted" id="otp-left" data-testid="otp-attempts-left" hidden></p>
+        <div class="actions"><button type="submit" data-testid="otp-submit">ยืนยัน OTP</button></div>
+      </form>
+    </div>
+  </section>
+
+  <section role="tabpanel" id="panel-staff" aria-labelledby="tab-staff" <% if (tab !== 'staff') { %>hidden<% } %>>
+    <form id="staff-form" novalidate>
+      <label for="staff-username">ชื่อผู้ใช้</label>
+      <input type="text" id="staff-username" name="username" autocomplete="username" data-testid="staff-username">
+      <label for="staff-password">รหัสผ่าน</label>
+      <input type="password" id="staff-password" name="password" autocomplete="current-password" data-testid="staff-password"
+        aria-describedby="staff-error">
+      <p class="field-error" id="staff-error" data-testid="staff-error" role="alert" hidden></p>
+      <div class="actions"><button type="submit" data-testid="staff-submit">เข้าสู่ระบบเจ้าหน้าที่ (SSO ภาครัฐ จำลอง)</button></div>
+    </form>
+  </section>
+</div>
+<script src="/static/js/auth.js" defer></script>
+<%- include('partials/foot') %>

@@ -1,0 +1,17 @@
+<%- include('partials/head') %>
+<h1>ตรวจสอบเอกสารดิจิทัล</h1>
+<section class="card" aria-labelledby="h-verify">
+  <h2 id="h-verify">ผลการตรวจสอบรหัส <span><%= code %></span></h2>
+  <p role="status" class="badge verify-<%= v.result %>" data-testid="verify-result" data-result="<%= v.result %>"><%= resultTh %></p>
+<% if (v.result === 'VALID' || v.result === 'EXPIRED') { %>
+  <dl class="kv">
+    <dt>เลขเอกสาร</dt><dd data-testid="verify-doc-no"><%= v.docNo %></dd>
+    <dt>ชื่อผู้ยื่น</dt><dd data-testid="verify-applicant"><%= v.applicantMasked %></dd>
+    <dt>บริการ</dt><dd data-testid="verify-service"><%= serviceLabel %></dd>
+    <dt>วันออก</dt><dd><%- timeTag(v.issuedAt, 'verify-issued') %></dd>
+    <dt>ใช้ได้ถึง</dt><dd><time data-testid="verify-expires" data-iso="<%= v.validUntil %>" datetime="<%= v.validUntil %>"><%= fmt.date(v.validUntil) %></time></dd>
+    <dt>ผู้ลงนาม</dt><dd data-testid="verify-signer"><%= v.signer %></dd>
+  </dl>
+<% } %>
+</section>
+<%- include('partials/foot') %>

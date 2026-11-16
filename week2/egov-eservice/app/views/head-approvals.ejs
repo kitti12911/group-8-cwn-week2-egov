@@ -1,0 +1,26 @@
+<%- include('partials/head') %>
+<h1>รายการรออนุมัติ</h1>
+<p class="muted">เรียงตามกำหนดเสร็จ (เท่ากันเรียงตามเลขคำขอ)</p>
+
+<% if (!rows.length) { %><p class="msg" data-testid="approvals-empty">ไม่มีรายการรออนุมัติ</p><% } %>
+<div class="table-wrap">
+  <table data-testid="approval-table">
+    <caption class="sr-only">คำขอที่รออนุมัติ</caption>
+    <thead>
+      <tr><th scope="col">เลขคำขอ</th><th scope="col">บริการ</th><th scope="col">ผู้ยื่น</th><th scope="col">กำหนดเสร็จ</th><th scope="col">ระดับเตือน</th><th scope="col">ดำเนินการ</th></tr>
+    </thead>
+    <tbody>
+      <% rows.forEach(function (r) { %>
+      <tr data-testid="approval-row" data-case-no="<%= r.caseNo %>" data-sla-level="<%= r.level || '' %>">
+        <td data-testid="row-case-no"><%= r.caseNo %></td>
+        <td data-testid="row-service"><%= r.serviceId %> <%= r.serviceName %></td>
+        <td data-testid="row-applicant"><%= r.applicantName %></td>
+        <td><%- timeTag(r.dueAt, 'row-due') %></td>
+        <td><% if (r.level) { %><%- levelTag(r.level, 'row-sla-level') %><% } %></td>
+        <td><a href="/officer/cases/<%= r.caseNo %>" data-testid="approval-open">เปิดคำขอ</a></td>
+      </tr>
+      <% }); %>
+    </tbody>
+  </table>
+</div>
+<%- include('partials/foot') %>

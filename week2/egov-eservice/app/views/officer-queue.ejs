@@ -1,0 +1,60 @@
+<%- include('partials/head') %>
+<h1>คิวงาน <small class="muted"><%= deptName %></small></h1>
+<% if (user.role === 'head') { %><p class="muted">หัวหน้าฝ่ายดูคิวได้อย่างเดียว (รับเรื่อง/ตีกลับแทนเจ้าหน้าที่ไม่ได้)</p><% } %>
+
+<div class="card grid">
+  <label for="queue-filter">แสดง
+    <select id="queue-filter" name="filter" data-testid="queue-filter">
+      <option value="all"<%= filter === 'all' ? ' selected' : '' %>>ทั้งหมด</option>
+      <option value="unclaimed"<%= filter === 'unclaimed' ? ' selected' : '' %>>ยังไม่มีผู้รับ</option>
+      <option value="mine"<%= filter === 'mine' ? ' selected' : '' %>>ของฉัน</option>
+    </select>
+  </label>
+  <% if (workload !== null) { %>
+  <p>งานในมือของฉัน: <strong data-testid="workload-count"><%= workload %></strong> / 10 เรื่อง</p>
+  <% } %>
+</div>
+
+<% if (!rows.length) { %>
+<p data-testid="queue-empty" class="msg">ไม่มีงานในคิว</p>
+<% } %>
+<div class="table-wrap">
+  <table data-testid="queue-table">
+    <caption class="sr-only">คิวงาน เรียงตามกำหนดเสร็จ</caption>
+    <thead>
+      <tr><th scope="col">เลขคำขอ</th><th scope="col">บริการ</th><th scope="col">ผู้ยื่น</th><th scope="col">เลขบัตร</th><th scope="col">สถานะ</th><th scope="col">กำหนดเสร็จ</th><th scope="col">ระดับเตือน</th><th scope="col">ผู้ถือเรื่อง</th><th scope="col">ดำเนินการ</th></tr>
+    </thead>
+    <tbody>
+      <% rows.forEach(function (r) { %>
+      <tr data-testid="queue-row" data-case-no="<%= r.caseNo %>" data-owner="<%= r.owner %>" data-status="<%= r.status %>" data-sla-level="<%= r.level || '' %>">
+        <td data-testid="row-case-no"><a href="/officer/cases/<%= r.caseNo %>"><%= r.caseNo %></a></td>
+        <td data-testid="row-service"><%= r.serviceId %> <%= r.serviceName %></td>
+        <td data-testid="row-applicant"><%= r.applicantName %></td>
+        <td data-testid="row-id-masked"><%= r.idMasked %></td>
+        <td data-testid="row-status" data-status="<%= r.status %>"><%- statusTag(r.status, 'row-status-badge') %></td>
+        <td><%- timeTag(r.dueAt, 'row-due') %></td>
+        <td><% if (r.level) { %><%- levelTag(r.level, 'row-sla-level') %><% } else { %><span data-testid="row-sla-level">–</span><% } %></td>
+        <td data-testid="row-owner"><%= r.owner %></td>
+        <td><% if (r.claimable) { %><button type="button" class="claim" data-testid="claim-btn" data-case-no="<%= r.caseNo %>">รับเรื่อง</button><% } %></td>
+      </tr>
+      <% }); %>
+    </tbody>
+  </table>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var sel = document.getElementById('queue-filter');
+  sel.addEventListener('change', function () { location.href = '/officer/queue?filter=' + encodeURIComponent(sel.value); });
+  document.querySelectorAll('button.claim').forEach(function (b) {
+    b.addEventListener('click', async function () {
+      b.disabled = true;
+      var r = await egov.api('POST', '/api/officer/cases/' + encodeURIComponent(b.dataset.caseNo) + '/claim');
+      if (r.ok) { location.reload(); return; }
+      egov.showError((r.data && r.data.message) || 'เกิดข้อผิดพลาด');
+      b.disabled = false;
+    });
+  });
+});
+</script>
+<%- include('partials/foot') %>

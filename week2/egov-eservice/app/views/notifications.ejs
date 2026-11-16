@@ -1,0 +1,16 @@
+<%- include('partials/head') %>
+<h1>แจ้งเตือน</h1>
+<p class="muted">แจ้งเมื่อคำขอเข้าระดับ "ใกล้ครบกำหนด" หรือ "เกินกำหนด" (ระดับละ 1 ครั้งต่อคำขอ)</p>
+
+<% if (!items.length) { %>
+<p class="msg" data-testid="noti-empty">ไม่มีแจ้งเตือน</p>
+<% } else { %>
+<ul class="noti-list" aria-label="รายการแจ้งเตือน">
+  <% items.forEach(function (n) { %>
+  <li class="noti lv-<%= n.level %>" title="<%= fmt.dt(n.createdAt) %>" data-created-at="<%= n.createdAt %>">
+    <a href="/officer/cases/<%= n.caseNo %>" data-testid="noti-item" data-case-no="<%= n.caseNo %>" data-level="<%= n.level %>"><%= n.text %></a>
+  </li>
+  <% }); %>
+</ul>
+<% } %>
+<%- include('partials/foot') %>

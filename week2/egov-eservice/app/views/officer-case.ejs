@@ -1,0 +1,198 @@
+<%- include('partials/head') %>
+<h1>คำขอ <span data-testid="case-no"><%= v.caseNo %></span></h1>
+
+<section class="card" aria-labelledby="h-summary">
+  <h2 id="h-summary">ข้อมูลคำขอ</h2>
+  <dl class="grid">
+    <div><dt>สถานะ</dt><dd><%- statusTag(v.status) %></dd></div>
+    <div><dt>บริการ</dt><dd data-testid="case-service"><%= v.serviceId %> <%= v.serviceName %></dd></div>
+    <% if (v.stepLabel) { %><div><dt>ขั้นตอน</dt><dd data-testid="case-step"><%= v.stepLabel %></dd></div><% } %>
+    <div><dt>ค่าธรรมเนียม</dt><dd data-testid="case-fee"><%= fmt.baht(v.fee) %></dd></div>
+    <div><dt>ผู้ยื่น</dt><dd data-testid="applicant-name"><%= v.applicantName %></dd></div>
+    <div><dt>เลขบัตรประชาชน</dt><dd>
+      <span data-testid="applicant-id"><%= v.idMasked %></span>
+      <span id="full-id-slot"></span>
+    </dd></div>
+    <div><dt>กำหนดเสร็จ</dt><dd><%- timeTag(v.dueAt, 'sla-due') %></dd></div>
+    <div><dt>ระดับเตือน</dt><dd><% if (v.level) { %><%- levelTag(v.level) %><% } else { %>–<% } %></dd></div>
+    <% if (v.closedAt) { %><div><dt>ปิดงานเมื่อ</dt><dd><%- timeTag(v.closedAt, 'closed-at') %></dd></div><% } %>
+    <div><dt>ผู้ถือเรื่อง</dt><dd data-testid="case-owner"><%= v.owner || 'ยังไม่มีผู้รับ' %></dd></div>
+    <div><dt>ตีกลับแล้ว (ครั้ง)</dt><dd data-testid="return-count"><%= v.returnCount %></dd></div>
+    <% if (v.fixDeadline) { %><div><dt>เส้นตายแก้ไขของประชาชน</dt><dd><%- timeTag(v.fixDeadline, 'fix-deadline') %></dd></div><% } %>
+    <% if (v.lastReturn) { %><div><dt>เหตุผลที่ตีกลับ</dt><dd data-testid="return-reason-display"><%= v.lastReturn.reason %></dd></div><% } %>
+    <% if (v.status === 'REJECTED' && v.rejectReason) { %><div><dt>เหตุผลที่ไม่อนุมัติ</dt><dd data-testid="reject-reason-display"><%= v.rejectReason %></dd></div><% } %>
+  </dl>
+</section>
+
+<% if (can.unmask) { %>
+<section class="card" aria-labelledby="h-unmask">
+  <h2 id="h-unmask">แสดงเลขบัตรเต็ม</h2>
+  <button type="button" id="show-full-id-btn" data-testid="show-full-id-btn" aria-controls="unmask-form" aria-expanded="false">แสดงเลขเต็ม</button>
+  <div id="unmask-form" hidden>
+    <label for="unmask-reason">เหตุผลในการขอดูเลขเต็ม (บันทึกใน Audit)</label>
+    <input type="text" id="unmask-reason" data-testid="unmask-reason" autocomplete="off">
+    <button type="button" id="unmask-submit" data-testid="unmask-submit">ยืนยัน</button>
+    <p id="unmask-error" data-testid="unmask-error" class="field-error" role="alert" hidden></p>
+  </div>
+</section>
+<% } %>
+
+<section class="card" aria-labelledby="h-actions">
+  <h2 id="h-actions">ดำเนินการ</h2>
+  <div class="actions">
+    <% if (can.claim) { %><button type="button" class="act" data-testid="claim-btn" data-act="claim" data-url="/api/officer/cases/<%= v.caseNo %>/claim">รับเรื่อง</button><% } %>
+    <% if (can.decide) { %><button type="button" class="act" data-testid="approve-btn" data-act="approve" data-url="/api/cases/<%= v.caseNo %>/approve">อนุมัติ</button><% } %>
+    <% if (can.issue) { %><button type="button" class="act" data-testid="issue-btn" data-act="issue" data-url="/api/officer/cases/<%= v.caseNo %>/issue">ออกเอกสาร</button><% } %>
+    <% if (!can.claim && !can.decide && !can.issue && !can.forward && !can.ret) { %><p class="muted" data-testid="no-action">ไม่มีรายการที่ดำเนินการได้ในขั้นนี้</p><% } %>
+  </div>
+
+  <% if (can.forward) { %>
+  <div class="grid">
+    <label for="forward-note">หมายเหตุส่งต่อ (ไม่บังคับ)</label>
+    <input type="text" id="forward-note" data-testid="forward-note" autocomplete="off">
+    <button type="button" id="forward-btn" data-testid="forward-btn">ผ่าน/ส่งต่อ</button>
+    <p class="muted">ระบบส่งต่อไปขั้นถัดไปตามเส้นทางของบริการโดยอัตโนมัติ</p>
+  </div>
+  <% } %>
+
+  <% if (can.ret) { %>
+  <div>
+    <button type="button" data-testid="return-btn" data-open="return-form" aria-controls="return-form" aria-expanded="false">ตีกลับ</button>
+    <div id="return-form" hidden>
+      <label for="return-reason">เหตุผลที่ตีกลับ (อย่างน้อย 10 ตัวอักษร)</label>
+      <textarea id="return-reason" data-testid="return-reason" rows="2"></textarea>
+      <button type="button" class="reasoned" data-testid="return-submit" data-reason="return-reason" data-error="return-reason-error" data-url="/api/officer/cases/<%= v.caseNo %>/return">ยืนยันตีกลับ</button>
+      <p id="return-reason-error" data-testid="return-reason-error" class="field-error" role="alert" hidden></p>
+    </div>
+  </div>
+  <% } %>
+
+  <% if (can.decide) { %>
+  <div>
+    <button type="button" data-testid="reject-btn" data-open="reject-form" aria-controls="reject-form" aria-expanded="false">ไม่อนุมัติ</button>
+    <div id="reject-form" hidden>
+      <label for="reject-reason">เหตุผลที่ไม่อนุมัติ (อย่างน้อย 10 ตัวอักษร)</label>
+      <textarea id="reject-reason" data-testid="reject-reason" rows="2"></textarea>
+      <button type="button" class="reasoned" data-testid="reject-submit" data-reason="reject-reason" data-error="reject-reason-error" data-url="/api/cases/<%= v.caseNo %>/reject">ยืนยันไม่อนุมัติ</button>
+      <p id="reject-reason-error" data-testid="reject-reason-error" class="field-error" role="alert" hidden></p>
+    </div>
+  </div>
+  <% } %>
+</section>
+
+<% if (v.docNo) { %>
+<section class="card" aria-labelledby="h-doc">
+  <h2 id="h-doc">เอกสารดิจิทัล</h2>
+  <p>เลขเอกสาร: <strong data-testid="doc-no"><%= v.docNo %></strong></p>
+  <p>รหัสตรวจสอบ: <strong data-testid="verify-code"><%= v.verifyCode %></strong></p>
+  <div data-testid="doc-qr" data-url="<%= v.verifyUrl %>">
+    <% if (v.qrDataUrl) { %><img src="<%= v.qrDataUrl %>" alt="QR สำหรับตรวจเอกสาร <%= v.verifyUrl %>" width="160" height="160"><% } %>
+    <p><a href="<%= v.verifyUrl %>"><%= v.verifyUrl %></a></p>
+  </div>
+</section>
+<% } %>
+
+<section class="card" aria-labelledby="h-files">
+  <h2 id="h-files">เอกสารแนบ</h2>
+  <% if (!files.length) { %><p class="muted">ไม่มีไฟล์แนบ</p><% } %>
+  <ul>
+    <% files.forEach(function (f) { %>
+    <li data-testid="doc-item" data-name="<%= f.name %>" data-file-id="<%= f.id %>" data-doc-key="<%= f.doc_key %>">
+      <%= labels.DOC_NAME[f.doc_key] || f.doc_key %> ·
+      <a data-testid="doc-download-link" href="/api/files/<%= f.id %>" target="_blank" rel="noopener"><%= f.name %></a>
+      <span class="muted">(<%= f.size.toLocaleString('en-US') %> ไบต์)</span>
+    </li>
+    <% }); %>
+  </ul>
+</section>
+
+<section class="card" aria-labelledby="h-timeline">
+  <h2 id="h-timeline">ไทม์ไลน์</h2>
+  <ol data-testid="case-timeline">
+    <% events.forEach(function (e) { %>
+    <li data-testid="timeline-item" data-iso="<%= fmt.iso(e.time) %>" data-status="<%= e.to_status || '' %>">
+      <%- timeTag(e.time) %> · <%= labels.STATUS_TH[e.to_status] || e.to_status || '' %>
+      <% if (e.actor) { %><span class="muted">(<%= e.actor === 'citizen' ? 'ผู้ยื่น' : e.actor === 'system' ? 'ระบบ' : e.actor %>)</span><% } %>
+      <% if (e.note) { %> — <%= e.note %><% } %>
+    </li>
+    <% }); %>
+  </ol>
+</section>
+
+<p><a href="<%= user.role === 'head' && v.status === 'PENDING_APPROVAL' ? '/head/approvals' : '/officer/queue' %>">← กลับ</a></p>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var caseNo = <%- JSON.stringify(v.caseNo) %>;
+  function msg(r) { return (r.data && r.data.message) || 'เกิดข้อผิดพลาด'; }
+  function fieldError(id, text) {
+    var el = document.getElementById(id);
+    el.textContent = text; el.hidden = false;
+  }
+  function formatId(s) {
+    s = String(s || '').replace(/\D/g, '');
+    if (s.length !== 13) return s;
+    return s[0] + '-' + s.slice(1, 5) + '-' + s.slice(5, 10) + '-' + s.slice(10, 12) + '-' + s[12];
+  }
+  // simple actions: claim / approve / issue
+  document.querySelectorAll('button.act').forEach(function (b) {
+    b.addEventListener('click', async function () {
+      b.disabled = true;
+      var r = await egov.api('POST', b.dataset.url);
+      if (r.ok) { location.reload(); return; }
+      egov.showError(msg(r)); b.disabled = false;
+    });
+  });
+  // open reason forms (return / reject)
+  document.querySelectorAll('[data-open]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var f = document.getElementById(b.dataset.open);
+      f.hidden = false; b.setAttribute('aria-expanded', 'true');
+      var t = f.querySelector('textarea'); if (t) t.focus();
+    });
+  });
+  document.querySelectorAll('button.reasoned').forEach(function (b) {
+    b.addEventListener('click', async function () {
+      var reason = document.getElementById(b.dataset.reason).value;
+      b.disabled = true;
+      var r = await egov.api('POST', b.dataset.url, { reason: reason });
+      if (r.ok) { location.reload(); return; }
+      if (r.data && r.data.code === 'REASON_TOO_SHORT') fieldError(b.dataset.error, msg(r));
+      else egov.showError(msg(r));
+      b.disabled = false;
+    });
+  });
+  // forward (route is automatic; only an optional note)
+  var fwd = document.getElementById('forward-btn');
+  if (fwd) fwd.addEventListener('click', async function () {
+    fwd.disabled = true;
+    var note = document.getElementById('forward-note').value;
+    var r = await egov.api('POST', '/api/officer/cases/' + encodeURIComponent(caseNo) + '/forward', { note: note });
+    if (r.ok) { location.reload(); return; }
+    egov.showError(msg(r)); fwd.disabled = false;
+  });
+  // unmask with reason (shown only on this page view; not persisted)
+  var show = document.getElementById('show-full-id-btn');
+  if (show) {
+    show.addEventListener('click', function () {
+      document.getElementById('unmask-form').hidden = false; show.setAttribute('aria-expanded', 'true');
+      document.getElementById('unmask-reason').focus();
+    });
+    document.getElementById('unmask-submit').addEventListener('click', async function () {
+      var reason = document.getElementById('unmask-reason').value;
+      var err = document.getElementById('unmask-error');
+      err.hidden = true;
+      var r = await egov.api('POST', '/api/officer/cases/' + encodeURIComponent(caseNo) + '/unmask', { reason: reason });
+      if (!r.ok) { fieldError('unmask-error', msg(r)); return; }
+      var slot = document.getElementById('full-id-slot');
+      slot.innerHTML = '';
+      var span = document.createElement('strong');
+      span.setAttribute('data-testid', 'full-id');
+      span.textContent = formatId(r.data.idNo);
+      slot.appendChild(document.createTextNode(' เลขเต็ม: '));
+      slot.appendChild(span);
+    });
+  }
+});
+</script>
+<%- include('partials/foot') %>

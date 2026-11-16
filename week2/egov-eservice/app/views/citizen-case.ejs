@@ -1,0 +1,148 @@
+<%- include('partials/head') %>
+<h1>คำขอ <span data-testid="case-no"><%= v.caseNo %></span></h1>
+
+<section class="card" aria-labelledby="h-summary">
+  <h2 id="h-summary">ข้อมูลคำขอ</h2>
+  <dl class="grid">
+    <div><dt>สถานะ</dt><dd><%- statusTag(v.status) %></dd></div>
+    <div><dt>บริการ</dt><dd data-testid="case-service"><%= v.serviceId %> <%= v.serviceName %></dd></div>
+    <% if (v.stepLabel) { %><div><dt>ขั้นตอน</dt><dd data-testid="case-step"><%= v.stepLabel %></dd></div><% } %>
+    <div><dt>ค่าธรรมเนียม</dt><dd data-testid="case-fee"><%= fmt.baht(v.fee) %></dd></div>
+    <div><dt>เลขใบเสร็จ</dt><dd data-testid="receipt-no"><%= v.receiptNo || '–' %></dd></div>
+    <div><dt>ยอดชำระ</dt><dd data-testid="receipt-amount"><%= fmt.baht(v.fee) %></dd></div>
+    <div><dt>ชำระเมื่อ</dt><dd><%- timeTag(v.paidAt, 'receipt-paid-at') %></dd></div>
+    <div><dt>ผู้ยื่น</dt><dd data-testid="case-applicant"><%= v.applicantName %></dd></div>
+    <div><dt>เลขบัตรประชาชน</dt><dd data-testid="case-id-full"><%= v.idFull %></dd></div>
+    <div><dt>กำหนดเสร็จ</dt><dd><%- timeTag(v.dueAt, 'sla-due') %></dd></div>
+    <div><dt>ระดับเตือน</dt><dd><% if (v.level) { %><%- levelTag(v.level) %><% } else { %>–<% } %></dd></div>
+    <% if (v.closedAt) { %><div><dt>ปิดงานเมื่อ</dt><dd><%- timeTag(v.closedAt, 'closed-at') %></dd></div><% } %>
+    <% if (v.cancelledAt) { %><div><dt>ยกเลิกเมื่อ</dt><dd><%- timeTag(v.cancelledAt, 'cancelled-at') %></dd></div><% } %>
+    <% if (v.rejectReason) { %><div><dt>เหตุผลที่ไม่อนุมัติ</dt><dd data-testid="reject-reason-display"><%= v.rejectReason %></dd></div><% } %>
+  </dl>
+  <% if (v.noRefund) { %><p class="alert alert-error" data-testid="no-refund-note"><%= noRefundText %></p><% } %>
+</section>
+
+<% if (v.status === 'NEED_FIX') { %>
+<section class="card" aria-labelledby="h-fix">
+  <h2 id="h-fix">ต้องแก้ไขเอกสาร</h2>
+  <% if (v.lastReturn) { %><p>เหตุผลที่ถูกตีกลับ: <strong data-testid="return-reason-display"><%= v.lastReturn.reason %></strong></p><% } %>
+  <p>ส่งแก้ไขได้ภายใน <%- timeTag(v.fixDeadline, 'fix-deadline') %> (7 วัน นับจากเวลาตีกลับ) · เลยกำหนดระบบจะยกเลิกคำขออัตโนมัติ</p>
+  <% if (can.resubmit) { %>
+  <div class="grid">
+    <div>
+      <label for="fix-doc-key">ประเภทเอกสารที่แนบใหม่</label>
+      <select id="fix-doc-key" data-testid="fix-doc-key">
+        <% fixDocs.forEach(function (d) { %><option value="<%= d.key %>"<%= d.key === 'extra' ? ' selected' : '' %>><%= d.name %></option><% }); %>
+      </select>
+    </div>
+    <div>
+      <label for="fix-upload-input">แนบไฟล์ใหม่ (ไม่บังคับ · PDF, JPG, PNG ไม่เกิน 5 MB)</label>
+      <input type="file" id="fix-upload-input" data-testid="fix-upload-input" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png">
+    </div>
+  </div>
+  <div class="actions"><button type="button" id="submit-fix-btn" data-testid="submit-fix-btn">ส่งแก้ไข</button></div>
+  <% } %>
+</section>
+<% } %>
+
+<% if (can.cancel) { %>
+<section class="card" aria-labelledby="h-cancel">
+  <h2 id="h-cancel">ยกเลิกคำขอ</h2>
+  <p class="muted">ยกเลิกได้เฉพาะคำขอที่ยังไม่มีเจ้าหน้าที่รับเรื่อง</p>
+  <button type="button" class="danger" id="cancel-case-btn" data-testid="cancel-case-btn" aria-controls="cancel-dialog" aria-expanded="false">ยกเลิกคำขอ</button>
+  <div id="cancel-dialog" role="dialog" aria-modal="false" aria-labelledby="cancel-dialog-title" aria-describedby="cancel-confirm-text" class="alert alert-error" hidden>
+    <p id="cancel-dialog-title"><strong>ยืนยันการยกเลิกคำขอ <%= v.caseNo %>?</strong></p>
+    <p id="cancel-confirm-text" data-testid="cancel-confirm-text"><%= noRefundText %></p>
+    <div class="actions">
+      <button type="button" class="danger" id="confirm-cancel-btn" data-testid="confirm-cancel-btn">ยืนยันยกเลิก</button>
+      <button type="button" class="secondary" id="dismiss-cancel-btn" data-testid="dismiss-cancel-btn">ไม่ยกเลิก</button>
+    </div>
+  </div>
+</section>
+<% } %>
+
+<% if (v.docNo) { %>
+<section class="card" aria-labelledby="h-doc">
+  <h2 id="h-doc">เอกสารดิจิทัล</h2>
+  <p>เลขเอกสาร: <strong data-testid="doc-no"><%= v.docNo %></strong></p>
+  <p>รหัสตรวจสอบ: <strong data-testid="verify-code"><%= v.verifyCode %></strong></p>
+  <div data-testid="doc-qr" data-url="<%= v.verifyUrl %>">
+    <% if (v.qrDataUrl) { %><img src="<%= v.qrDataUrl %>" alt="QR สำหรับตรวจเอกสาร <%= v.verifyUrl %>" width="160" height="160"><% } %>
+    <p><a href="<%= v.verifyUrl %>"><%= v.verifyUrl %></a></p>
+  </div>
+  <p><a class="btn" data-testid="download-doc-btn" href="/api/documents/<%= encodeURIComponent(v.docNo) %>/pdf" download="<%= v.docNo %>.pdf">ดาวน์โหลดเอกสาร</a></p>
+</section>
+<% } %>
+
+<section class="card" aria-labelledby="h-files">
+  <h2 id="h-files">เอกสารแนบ</h2>
+  <% if (!files.length) { %><p class="muted">ไม่มีไฟล์แนบ</p><% } %>
+  <ul>
+    <% files.forEach(function (f) { %>
+    <li data-testid="doc-item" data-name="<%= f.name %>" data-file-id="<%= f.id %>" data-doc-key="<%= f.doc_key %>">
+      <%= labels.DOC_NAME[f.doc_key] || (f.doc_key === 'extra' ? 'เอกสารเพิ่มเติม' : f.doc_key) %> ·
+      <a data-testid="doc-download-link" href="/api/files/<%= f.id %>" download="<%= f.name %>"><%= f.name %></a>
+      <span class="muted">(<%= f.size.toLocaleString('en-US') %> ไบต์)</span>
+    </li>
+    <% }); %>
+  </ul>
+</section>
+
+<section class="card" aria-labelledby="h-timeline">
+  <h2 id="h-timeline">ไทม์ไลน์</h2>
+  <ol data-testid="case-timeline">
+    <% events.forEach(function (e) { %>
+    <li data-testid="timeline-item" data-iso="<%= fmt.iso(e.time) %>" data-status="<%= e.to_status || '' %>">
+      <%- timeTag(e.time) %> · <%= labels.STATUS_TH[e.to_status] || e.to_status || '' %>
+      <% if (e.actor) { %><span class="muted">(<%= e.actor === 'citizen' ? 'ผู้ยื่น' : e.actor === 'system' ? 'ระบบ' : 'เจ้าหน้าที่' %>)</span><% } %>
+      <% if (e.note) { %> — <%= e.note %><% } %>
+    </li>
+    <% }); %>
+  </ol>
+</section>
+
+<p><a href="/citizen">← กลับไปคำขอของฉัน</a></p>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var caseNo = <%- JSON.stringify(v.caseNo) %>;
+  var base = '/api/cases/' + encodeURIComponent(caseNo);
+  function msg(r) { return (r.data && r.data.message) || 'เกิดข้อผิดพลาด'; }
+
+  var cancelBtn = document.getElementById('cancel-case-btn');
+  if (cancelBtn) {
+    var dlg = document.getElementById('cancel-dialog');
+    cancelBtn.addEventListener('click', function () {
+      dlg.hidden = false; cancelBtn.setAttribute('aria-expanded', 'true');
+      document.getElementById('confirm-cancel-btn').focus();
+    });
+    document.getElementById('dismiss-cancel-btn').addEventListener('click', function () {
+      dlg.hidden = true; cancelBtn.setAttribute('aria-expanded', 'false'); cancelBtn.focus();
+    });
+    document.getElementById('confirm-cancel-btn').addEventListener('click', async function (ev) {
+      var b = ev.currentTarget; b.disabled = true;
+      var r = await egov.api('POST', base + '/cancel');
+      if (r.ok) { location.reload(); return; }
+      dlg.hidden = true; egov.showError(msg(r)); b.disabled = false;
+    });
+  }
+
+  var fixBtn = document.getElementById('submit-fix-btn');
+  if (fixBtn) fixBtn.addEventListener('click', async function () {
+    fixBtn.disabled = true;
+    var input = document.getElementById('fix-upload-input');
+    var body;
+    if (input && input.files && input.files.length) {
+      body = new FormData();
+      body.append('file', input.files[0]);
+      body.append('docKey', document.getElementById('fix-doc-key').value);
+    }
+    var r = await egov.api('POST', base + '/resubmit', body);
+    if (r.ok) { location.reload(); return; }
+    egov.showError(msg(r));
+    if (r.data && r.data.code === 'FIX_WINDOW_EXPIRED') { setTimeout(function () { location.reload(); }, 1500); return; }
+    fixBtn.disabled = false;
+  });
+});
+</script>
+<%- include('partials/foot') %>

@@ -1,0 +1,48 @@
+<%- include('partials/head') %>
+<h1>ผู้ใช้และบทบาท</h1>
+<p class="muted">การเปลี่ยนบทบาทมีผลเมื่อผู้ใช้ล็อกอินครั้งถัดไป · เปลี่ยนบทบาทของตัวเองไม่ได้</p>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>username</th><th>ชื่อ</th><th>บทบาท</th><th>แผนก</th><th></th></tr></thead>
+  <tbody>
+  <% items.forEach(function (u) { %>
+    <tr data-testid="user-row" data-username="<%= u.username %>">
+      <td><%= u.username %></td>
+      <td><%= u.name %></td>
+      <td>
+        <select aria-label="บทบาทของ <%= u.username %>" data-testid="user-role-select">
+          <% roles.forEach(function (r) { %><option value="<%= r %>"<%= u.role === r ? ' selected' : '' %>><%= r %></option><% }); %>
+        </select>
+      </td>
+      <td>
+        <select aria-label="แผนกของ <%= u.username %>" data-testid="user-dept-select">
+          <option value=""<%= (u.dept !== 'registry' && u.dept !== 'works') ? ' selected' : '' %>>(ไม่มี)</option>
+          <option value="registry"<%= u.dept === 'registry' ? ' selected' : '' %>>registry</option>
+          <option value="works"<%= u.dept === 'works' ? ' selected' : '' %>>works</option>
+        </select>
+      </td>
+      <td><button type="button" data-testid="user-save-btn">บันทึก</button></td>
+    </tr>
+  <% }); %>
+  </tbody>
+</table>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  document.querySelectorAll('[data-testid="user-save-btn"]').forEach(function (btn) {
+    btn.addEventListener('click', async function () {
+      var row = btn.closest('tr');
+      var user = row.getAttribute('data-username');
+      var body = {
+        role: row.querySelector('[data-testid="user-role-select"]').value,
+        dept: row.querySelector('[data-testid="user-dept-select"]').value
+      };
+      document.querySelectorAll('[data-testid="action-error"],[data-testid="action-success"]').forEach(function (e) { e.remove(); });
+      var r = await egov.api('PUT', '/api/admin/users/' + encodeURIComponent(user), body);
+      if (r.ok) egov.showSuccess('บันทึกแล้ว');
+      else egov.showError((r.data && r.data.message) || 'เกิดข้อผิดพลาด', 'action-error');
+    });
+  });
+});
+</script>
+<%- include('partials/foot') %>

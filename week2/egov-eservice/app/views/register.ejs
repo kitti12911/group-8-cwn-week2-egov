@@ -1,0 +1,26 @@
+<%- include('partials/head') %>
+<h1>ลงทะเบียนใช้งานครั้งแรก</h1>
+<div class="card">
+  <form id="register-form" novalidate>
+    <label for="reg-name">ชื่อ-สกุล (จาก ThaiD แก้ไขไม่ได้)</label>
+    <input type="text" id="reg-name" name="name" value="<%= citizenName %>" readonly aria-readonly="true" data-testid="reg-name">
+
+    <label for="reg-mobile">เบอร์มือถือ (บังคับ)</label>
+    <input type="tel" id="reg-mobile" name="mobile" inputmode="numeric" autocomplete="tel" required aria-required="true"
+      aria-describedby="reg-error-mobile" data-testid="reg-mobile">
+    <p class="field-error" id="reg-error-mobile" data-testid="reg-error-mobile" role="alert" hidden></p>
+
+    <label for="reg-email">อีเมล (ไม่บังคับ)</label>
+    <input type="email" id="reg-email" name="email" autocomplete="email" data-testid="reg-email">
+
+    <div class="check">
+      <input type="checkbox" id="reg-consent" name="consent" aria-describedby="reg-error-consent" data-testid="reg-consent">
+      <label for="reg-consent">ข้าพเจ้ายินยอมให้เทศบาลเก็บและประมวลผลข้อมูลส่วนบุคคลเพื่อให้บริการตาม พ.ร.บ. คุ้มครองข้อมูลส่วนบุคคล (PDPA)</label>
+    </div>
+    <p class="field-error" id="reg-error-consent" data-testid="reg-error-consent" role="alert" hidden></p>
+
+    <div class="actions"><button type="submit" data-testid="reg-submit">ลงทะเบียน</button></div>
+  </form>
+</div>
+<script src="/static/js/auth.js" defer></script>
+<%- include('partials/foot') %>

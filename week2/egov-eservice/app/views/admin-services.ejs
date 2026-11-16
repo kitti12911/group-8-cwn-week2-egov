@@ -1,0 +1,50 @@
+<%- include('partials/head') %>
+<h1>ค่าธรรมเนียมและ SLA ของบริการ</h1>
+<p class="muted">ค่าธรรมเนียมจำนวนเต็ม 0–100,000 บาท · SLA จำนวนเต็ม 1–60 วันทำการ · มีผลกับคำขอที่เข้าสถานะรอชำระเงินหลังบันทึก</p>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>บริการ</th><th>ค่าธรรมเนียม (฿)</th><th>SLA (วันทำการ)</th><th></th></tr></thead>
+  <tbody>
+  <% items.forEach(function (s) { %>
+    <tr data-testid="service-row" data-service-id="<%= s.id %>">
+      <td><strong><%= s.id %></strong> <%= s.name %></td>
+      <td>
+        <% if (s.id === 'SV-03') { %>
+          <label>ฐาน (พื้นที่ 1–100 ตร.ม.) <input type="number" data-testid="svc-fee-SV-03" data-field="fee" value="<%= s.fee %>"></label>
+          <label>ต่อ ตร.ม. ส่วนเกิน 100 <input type="number" data-testid="svc-fee-per-sqm-SV-03" data-field="feePerSqm" value="<%= s.feePerSqm %>"></label>
+        <% } else if (s.id === 'SV-01') { %>
+          <label>ต่อฉบับ <input type="number" data-testid="svc-fee-SV-01" data-field="fee" value="<%= s.fee %>"></label>
+        <% } else { %>
+          <label>คงที่ <input type="number" data-testid="svc-fee-<%= s.id %>" data-field="fee" value="<%= s.fee %>"></label>
+        <% } %>
+      </td>
+      <td><input type="number" aria-label="SLA <%= s.id %>" data-testid="svc-sla-<%= s.id %>" data-field="sla" value="<%= s.sla %>"></td>
+      <td><button type="button" data-testid="svc-save-<%= s.id %>" data-save="<%= s.id %>">บันทึก</button></td>
+    </tr>
+  <% }); %>
+  </tbody>
+</table>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  function clearMsg() {
+    document.querySelectorAll('[data-testid="action-error"],[data-testid="action-success"]').forEach(function (e) { e.remove(); });
+  }
+  document.querySelectorAll('[data-save]').forEach(function (btn) {
+    btn.addEventListener('click', async function () {
+      var id = btn.getAttribute('data-save');
+      var row = btn.closest('tr');
+      var body = {};
+      row.querySelectorAll('input[data-field]').forEach(function (inp) {
+        var v = inp.value.trim();
+        body[inp.getAttribute('data-field')] = v === '' ? null : Number(v);
+      });
+      clearMsg();
+      var r = await egov.api('PUT', '/api/admin/services/' + id, body);
+      if (r.ok) egov.showSuccess('บันทึกแล้ว');
+      else egov.showError((r.data && r.data.message) || 'เกิดข้อผิดพลาด', 'action-error');
+    });
+  });
+});
+</script>
+<%- include('partials/foot') %>

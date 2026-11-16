@@ -1,0 +1,65 @@
+<%- include('partials/head') %>
+<h1>วันหยุด</h1>
+<p class="muted">วันหยุดที่เพิ่มใหม่ไม่ทำให้กำหนดเสร็จของคำขอที่ชำระแล้วถูกคำนวณใหม่</p>
+<div class="card">
+  <label>วันที่ (YYYY-MM-DD) <input type="text" inputmode="numeric" placeholder="2026-12-02" data-testid="holiday-date-input" autocomplete="off"></label>
+  <label>ชื่อวันหยุด <input type="text" data-testid="holiday-name-input" autocomplete="off"></label>
+  <button type="button" data-testid="holiday-add-btn" id="holiday-add">เพิ่มวันหยุด</button>
+</div>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>วันที่</th><th>ชื่อ</th><th></th></tr></thead>
+  <tbody id="holiday-body">
+  <% items.forEach(function (h) { %>
+    <tr data-testid="holiday-row" data-date="<%= h.date %>">
+      <td><%= h.date %></td><td><%= h.name %></td>
+      <td><button type="button" data-testid="holiday-delete-btn" data-delete="<%= h.date %>">ลบ</button></td>
+    </tr>
+  <% }); %>
+  </tbody>
+</table>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var body = document.getElementById('holiday-body');
+  function clearMsg() {
+    document.querySelectorAll('[data-testid="action-error"],[data-testid="action-success"]').forEach(function (e) { e.remove(); });
+  }
+  function td(text) { var c = document.createElement('td'); c.textContent = text; return c; }
+  async function reload() {
+    var r = await egov.api('GET', '/api/admin/holidays');
+    if (!r.ok) return;
+    body.textContent = '';
+    r.data.items.forEach(function (h) {
+      var tr = document.createElement('tr');
+      tr.setAttribute('data-testid', 'holiday-row');
+      tr.setAttribute('data-date', h.date);
+      tr.appendChild(td(h.date));
+      tr.appendChild(td(h.name));
+      var c = document.createElement('td');
+      var b = document.createElement('button');
+      b.type = 'button'; b.textContent = 'ลบ';
+      b.setAttribute('data-testid', 'holiday-delete-btn');
+      b.setAttribute('data-delete', h.date);
+      c.appendChild(b); tr.appendChild(c); body.appendChild(tr);
+    });
+  }
+  document.getElementById('holiday-add').addEventListener('click', async function () {
+    var d = document.querySelector('[data-testid="holiday-date-input"]');
+    var n = document.querySelector('[data-testid="holiday-name-input"]');
+    clearMsg();
+    var r = await egov.api('POST', '/api/admin/holidays', { date: d.value.trim(), name: n.value.trim() });
+    if (r.ok) { egov.showSuccess('เพิ่มวันหยุดแล้ว'); d.value = ''; n.value = ''; await reload(); }
+    else egov.showError((r.data && r.data.message) || 'เกิดข้อผิดพลาด', 'action-error');
+  });
+  body.addEventListener('click', async function (ev) {
+    var b = ev.target.closest('[data-delete]');
+    if (!b) return;
+    clearMsg();
+    var r = await egov.api('DELETE', '/api/admin/holidays/' + encodeURIComponent(b.getAttribute('data-delete')));
+    if (r.ok) { egov.showSuccess('ลบวันหยุดแล้ว'); await reload(); }
+    else egov.showError((r.data && r.data.message) || 'เกิดข้อผิดพลาด', 'action-error');
+  });
+});
+</script>
+<%- include('partials/foot') %>

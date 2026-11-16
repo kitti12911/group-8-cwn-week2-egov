@@ -1,0 +1,25 @@
+<header class="app-header" data-testid="app-header">
+  <div class="brand"><span aria-hidden="true">🏛</span> e-Service กลาง <small>เทศบาลนครตัวอย่าง (สมมติ)</small></div>
+<% if (user) { const r = user.role; %>
+  <nav aria-label="เมนูหลัก" class="nav">
+    <% if (r === 'citizen') { %><a href="/citizen" data-testid="nav-my-cases">คำขอของฉัน</a><% } %>
+    <% if (r === 'officer' || r === 'head') { %><a href="/officer/queue" data-testid="nav-queue">คิวงาน</a><% } %>
+    <% if (r === 'head') { %><a href="/head/approvals" data-testid="nav-approvals">รออนุมัติ</a><% } %>
+    <% if (r === 'executive') { %><a href="/dashboard" data-testid="nav-dashboard">Dashboard</a><% } %>
+    <% if (r === 'auditor') { %><a href="/audit" data-testid="nav-audit">Audit Trail</a><% } %>
+    <% if (r === 'admin') { %>
+      <a href="/admin/services" data-testid="nav-admin-services">บริการ</a>
+      <a href="/admin/holidays" data-testid="nav-admin-holidays">วันหยุด</a>
+      <a href="/admin/users" data-testid="nav-admin-users">ผู้ใช้</a>
+    <% } %>
+    <% if (r === 'officer' || r === 'head') { %>
+      <a href="/notifications" data-testid="nav-bell" aria-label="แจ้งเตือน <%= bellCount %> รายการ">🔔 <span data-testid="bell-count"><%= bellCount %></span></a>
+    <% } %>
+  </nav>
+  <div class="who">
+    <span data-testid="user-name"><%= user.name %></span>
+    <span class="role" data-testid="user-role" data-role="<%= r %>"<% if (r === 'officer') { %> data-dept="<%= user.dept %>"<% } %>><%= roleTh %></span>
+    <form method="post" action="/logout" class="inline"><button type="submit" class="btn-link" data-testid="logout-btn">ออกจากระบบ</button></form>
+  </div>
+<% } %>
+</header>

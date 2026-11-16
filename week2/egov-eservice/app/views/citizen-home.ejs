@@ -1,0 +1,59 @@
+<%- include('partials/head') %>
+<h1 data-testid="citizen-welcome">สวัสดี <%= fullName %></h1>
+
+<section class="card" aria-labelledby="h-services">
+  <h2 id="h-services">เริ่มยื่นคำขอ</h2>
+  <div class="actions">
+    <% services.forEach(function (s) { %>
+    <a class="btn" href="/citizen/new/<%= s.id %>" data-testid="start-service-<%= s.id %>"><%= s.id %> <%= s.name %></a>
+    <% }); %>
+  </div>
+</section>
+
+<section class="card" aria-labelledby="h-cases">
+  <h2 id="h-cases">คำขอของฉัน</h2>
+  <% if (!cases.length) { %><p class="muted" data-testid="no-cases">ยังไม่มีคำขอ</p><% } else { %>
+  <div class="table-wrap">
+    <table data-testid="my-cases-table">
+      <caption class="sr-only">คำขอที่มีเลขคำขอแล้ว เรียงจากเลขมากไปน้อย</caption>
+      <thead><tr><th scope="col">เลขคำขอ</th><th scope="col">บริการ</th><th scope="col">สถานะ</th><th scope="col">กำหนดเสร็จ</th><th scope="col">ระดับเตือน</th></tr></thead>
+      <tbody>
+      <% cases.forEach(function (c) { %>
+        <tr data-testid="my-case-row" data-case-no="<%= c.caseNo %>" data-status="<%= c.status %>">
+          <td data-testid="row-case-no"><a href="/citizen/cases/<%= c.caseNo %>"><%= c.caseNo %></a></td>
+          <td data-testid="row-service"><%= c.serviceId %> <%= c.serviceName %></td>
+          <td data-testid="row-status" data-status="<%= c.status %>"><%- statusTag(c.status, 'row-status-badge') %></td>
+          <td><%- timeTag(c.dueAt, 'row-due') %></td>
+          <td><% if (c.level) { %><%- levelTag(c.level, 'row-sla-level') %><% } else { %>–<% } %></td>
+        </tr>
+      <% }); %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+</section>
+
+<section class="card" aria-labelledby="h-drafts">
+  <h2 id="h-drafts">ร่างและรอชำระเงิน</h2>
+  <% if (!drafts.length) { %><p class="muted" data-testid="no-drafts">ไม่มีร่าง</p><% } else { %>
+  <div class="table-wrap">
+    <table data-testid="my-drafts-table">
+      <caption class="sr-only">ร่างที่ยังไม่มีเลขคำขอ</caption>
+      <thead><tr><th scope="col">รหัสร่าง</th><th scope="col">บริการ</th><th scope="col">สถานะ</th><th scope="col">ค่าธรรมเนียม</th><th scope="col">ดำเนินการ</th></tr></thead>
+      <tbody>
+      <% drafts.forEach(function (d) { %>
+        <tr data-testid="my-draft-row" data-draft-id="<%= d.draftId %>" data-status="<%= d.status %>">
+          <td data-testid="row-draft-id"><%= d.draftId %></td>
+          <td data-testid="row-service"><%= d.serviceId %> <%= d.serviceName %></td>
+          <td data-testid="row-status" data-status="<%= d.status %>"><%- statusTag(d.status, 'row-status-badge') %></td>
+          <td data-testid="row-fee"><%= d.fee == null ? '–' : fmt.baht(d.fee) %></td>
+          <td><a class="btn secondary" data-testid="open-draft-btn" href="/citizen/new/<%= d.serviceId %>?draft=<%= d.draftId %>"
+                 aria-label="เปิดร่าง <%= d.draftId %>">เปิดร่าง</a></td>
+        </tr>
+      <% }); %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+</section>
+<%- include('partials/foot') %>

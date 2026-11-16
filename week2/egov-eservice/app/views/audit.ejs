@@ -1,0 +1,95 @@
+<%- include('partials/head') %>
+<h1>Audit Trail</h1>
+<p class="muted">อ่านอย่างเดียว · เพิ่มได้อย่างเดียว ไม่มีการแก้ไขหรือลบรายการ</p>
+
+<form id="audit-filter-form" class="card grid" method="get" action="/audit">
+  <label>ผู้ทำ (username)
+    <input type="text" name="actor" data-testid="audit-filter-actor" value="<%= filters.actor %>" autocomplete="off">
+  </label>
+  <label>เหตุการณ์
+    <select name="event" data-testid="audit-filter-event">
+      <option value="">ทั้งหมด</option>
+      <% events.forEach(function (e) { %><option value="<%= e %>"<%= filters.event === e ? ' selected' : '' %>><%= e %></option><% }); %>
+    </select>
+  </label>
+  <label>ตั้งแต่วันที่
+    <input type="date" name="from" data-testid="audit-filter-from" value="<%= filters.from %>">
+  </label>
+  <label>ถึงวันที่
+    <input type="date" name="to" data-testid="audit-filter-to" value="<%= filters.to %>">
+  </label>
+  <div class="actions">
+    <button type="submit" data-testid="audit-apply-btn">ค้นหา</button>
+    <a href="<%= exportHref %>" id="audit-export-link" role="button" download="audit.csv" data-testid="audit-export-csv-btn">ส่งออก CSV</a>
+  </div>
+</form>
+
+<div id="audit-results" data-export-href="<%= exportHref %>">
+  <p>จำนวนรายการ: <strong data-testid="audit-count"><%= items.length %></strong></p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>เวลา</th><th>ผู้ทำ</th><th>บทบาท</th><th>เหตุการณ์</th><th>เลขคำขอ</th><th>สถานะก่อน → หลัง</th><th>รายละเอียด</th></tr>
+      </thead>
+      <tbody>
+        <% items.forEach(function (r) { %>
+        <tr data-testid="audit-row" data-id="<%= r.id %>" data-event="<%= r.event %>" data-actor="<%= r.username %>" data-case-no="<%= r.caseNo || '' %>">
+          <td><%- timeTag(r.time, 'audit-time') %></td>
+          <td data-testid="audit-actor"><%= r.username %></td>
+          <td data-testid="audit-role"><%= r.role %></td>
+          <td data-testid="audit-event"><%= r.event %></td>
+          <td data-testid="audit-case-no"><%= r.caseNo || '–' %></td>
+          <td data-testid="audit-transition"><%= (r.fromStatus || r.toStatus) ? ((r.fromStatus || '–') + ' → ' + (r.toStatus || '–')) : '–' %></td>
+          <td data-testid="audit-detail"><%= r.detail %></td>
+        </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var form = document.getElementById('audit-filter-form');
+  var link = document.getElementById('audit-export-link');
+  function qs() {
+    var p = new URLSearchParams();
+    ['actor', 'event', 'from', 'to'].forEach(function (n) {
+      var v = form.elements[n].value.trim();
+      if (v) p.set(n, v);
+    });
+    return p.toString();
+  }
+  var seq = 0;
+  function refresh(pushUrl) {
+    var q = qs();
+    var my = ++seq;
+    return fetch('/audit' + (q ? '?' + q : ''), { credentials: 'same-origin', headers: { Accept: 'text/html' } })
+      .then(function (r) { return r.text(); })
+      .then(function (html) {
+        var doc = new DOMParser().parseFromString(html, 'text/html');
+        var fresh = doc.getElementById('audit-results');
+        if (!fresh || my !== seq) return; // only the latest request may paint
+        document.getElementById('audit-results').replaceWith(fresh);
+        link.setAttribute('href', fresh.getAttribute('data-export-href'));
+        if (pushUrl) history.replaceState(null, '', '/audit' + (q ? '?' + q : ''));
+      });
+  }
+  form.addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    // drop the old (unfiltered) rows at once so nothing stale is read while the new list loads
+    var box = document.getElementById('audit-results');
+    box.setAttribute('aria-busy', 'true');
+    box.querySelectorAll('[data-testid="audit-row"]').forEach(function (tr) { tr.remove(); });
+    var cnt = box.querySelector('[data-testid="audit-count"]');
+    if (cnt) cnt.textContent = '…';
+    refresh(true);
+  });
+  // export uses the filters currently shown on screen (= last applied); then re-list so the new EXPORT row appears
+  link.addEventListener('click', function () {
+    setTimeout(function () { refresh(false); }, 600);
+    setTimeout(function () { refresh(false); }, 1800);
+  });
+});
+</script>
+<%- include('partials/foot') %>

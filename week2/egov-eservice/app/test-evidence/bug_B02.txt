@@ -1,0 +1,103 @@
+npm notice run egov-eservice@1.0.0 npx
+npm notice run 'playwright' test --reporter=list,json --output=/tmp/b14/results
+
+Running 51 tests using 1 worker
+
+  ✓   1 tests/e2e/part1.spec.ts:11:1 › TC-AUTH-01 เลขบัตร 13 หลัก + checksum (1.2s)
+  ✓   2 tests/e2e/part1.spec.ts:33:1 › TC-AUTH-02 OTP ผิด 3 ครั้งล็อก 15 นาที (1.7s)
+  ✓   3 tests/e2e/part1.spec.ts:77:1 › TC-AUTH-03 ลงทะเบียนครั้งแรก (3.6s)
+  ✓   4 tests/e2e/part1.spec.ts:115:1 › TC-AUTH-04 เจ้าหน้าที่ SSO จำลองและหน้าตั้งต้นตามบทบาท (4.7s)
+  ✓   5 tests/e2e/part1.spec.ts:149:1 › TC-FEE-01 ค่าธรรมเนียม SV-01/SV-02/SV-03 (652ms)
+  ✓   6 tests/e2e/part1.spec.ts:192:1 › TC-SUBMIT-01 ยื่นคำขอ SV-01 ครบวงจร (757ms)
+  ✓   7 tests/e2e/part1.spec.ts:231:1 › TC-SUBMIT-02 เอกสารบังคับครบก่อนชำระ (666ms)
+  ✓   8 tests/e2e/part1.spec.ts:256:1 › TC-SUBMIT-03 ร่าง การลบร่าง และการยกเลิก (2.0s)
+  ✘   9 tests/e2e/part1.spec.ts:316:1 › TC-UPLOAD-01 ขนาดและจำนวนไฟล์ (11.0s)
+  ✓  10 tests/e2e/part1.spec.ts:346:1 › TC-UPLOAD-02 ชนิดไฟล์จากเนื้อไฟล์ (797ms)
+  ✓  11 tests/e2e/part1.spec.ts:366:1 › TC-PAY-01 อายุ QR 15:00 (1.3s)
+  ✓  12 tests/e2e/part1.spec.ts:393:1 › TC-PAY-02 ยอดเงินและ callback ซ้ำ (307ms)
+  ✓  13 tests/e2e/part1.spec.ts:409:1 › TC-PAY-03 ชำระพร้อมกัน เลขไม่ซ้ำ (458ms)
+  ✓  14 tests/e2e/part1.spec.ts:430:1 › TC-PAY-04 เลขคำขอข้ามปี 2569 → 2570 (366ms)
+  ✓  15 tests/e2e/part1.spec.ts:444:1 › TC-QUEUE-01 ลำดับคิวและขอบเขตแผนก (799ms)
+  ✓  16 tests/e2e/part1.spec.ts:474:1 › TC-QUEUE-02 รับเรื่องซ้อน พร้อมกันและต่อกัน (1.3s)
+  ✓  17 tests/e2e/part1.spec.ts:510:1 › TC-QUEUE-03 งานในมือสูงสุด 10 (1.6s)
+  ✓  18 tests/e2e/part1.spec.ts:538:1 › TC-SLA-01 กำหนดเสร็จตามตารางวันที่ (3.2s)
+  ✓  19 tests/e2e/part1.spec.ts:561:1 › TC-SLA-02 หยุดนับ SLA ระหว่างรอแก้ไข (2.1s)
+  ✓  20 tests/e2e/part1.spec.ts:603:1 › TC-SLA-03 ระดับเตือน ปกติ/ใกล้/เกิน (1.5s)
+  ✓  21 tests/e2e/part2.spec.ts:76:1 › TC-NOTI-01 · ผู้รับแจ้งเตือนตามระดับ (743ms)
+  ✓  22 tests/e2e/part2.spec.ts:87:1 › TC-NOTI-02 · ไม่แจ้งซ้ำ ข้ามระดับ และขั้นรออนุมัติ/รอออกเอกสาร (2.6s)
+  ✓  23 tests/e2e/part2.spec.ts:120:1 › TC-WORKFLOW-01 · SV-01 อนุมัติ + ออกเอกสาร (880ms)
+  ✓  24 tests/e2e/part2.spec.ts:152:1 › TC-WORKFLOW-02 · SV-02 ผ่านหัวหน้า (1.4s)
+  ✓  25 tests/e2e/part2.spec.ts:192:1 › TC-WORKFLOW-03 · SV-03 สามขั้นตอน (1.2s)
+  ✓  26 tests/e2e/part2.spec.ts:237:1 › TC-WORKFLOW-04 · ตีกลับสูงสุด 2 ครั้ง และผลหลังครบ (2.7s)
+  ✓  27 tests/e2e/part2.spec.ts:277:1 › TC-WORKFLOW-05 · เหตุผล ≥ 10 ตัวอักษร (ตีกลับ/ไม่อนุมัติ) (1.7s)
+  ✓  28 tests/e2e/part2.spec.ts:309:1 › TC-WORKFLOW-06 · เวลาแก้ไข 168 ชั่วโมง (1.0s)
+  ✓  29 tests/e2e/part2.spec.ts:338:1 › TC-DOC-01 · ออกเอกสารและข้อมูลใน PDF (577ms)
+  ✓  30 tests/e2e/part2.spec.ts:369:1 › TC-DOC-02 · ตรวจเอกสาร /verify (282ms)
+  ✓  31 tests/e2e/part2.spec.ts:385:1 › TC-DOC-03 · เอกสารหมดอายุและลายเซ็นไม่ตรง (1.8s)
+  ✓  32 tests/e2e/part2.spec.ts:428:1 › TC-PDPA-01 · ปิดบังเลขบัตรบนจอ (633ms)
+  ✓  33 tests/e2e/part2.spec.ts:450:1 › TC-PDPA-02 · API JSON ไม่ส่งเลขบัตรเต็ม (374ms)
+  ✓  34 tests/e2e/part2.spec.ts:470:1 › TC-PDPA-03 · แสดงเลขเต็มต้องมีเหตุผลและ Audit (833ms)
+  ✓  35 tests/e2e/part2.spec.ts:502:1 › TC-DASH-01 · Dashboard ตัวเลขเริ่มต้น (481ms)
+  ✓  36 tests/e2e/part2.spec.ts:522:1 › TC-DASH-02 · Dashboard ย้อนหลัง พ.ย. ต.ค. รายปี (679ms)
+  ✓  37 tests/e2e/part2.spec.ts:561:1 › TC-DASH-03 · ส่งออก Excel/PDF เท่าหน้าจอ และไม่มีข้อมูลส่วนบุคคล (1.3s)
+  ✓  38 tests/e2e/part2.spec.ts:589:1 › TC-DASH-04 · ค่าขอบทันกำหนด 16:29:59 / 16:30:00 / 16:30:01 (645ms)
+  ✓  39 tests/e2e/part2.spec.ts:615:1 › TC-AUDIT-01 · เหตุการณ์และฟิลด์ใน Audit (1.4s)
+  ✓  40 tests/e2e/part2.spec.ts:698:1 › TC-AUDIT-02 · Audit แก้/ลบไม่ได้ (405) (373ms)
+  ✓  41 tests/e2e/part2.spec.ts:722:1 › TC-AUDIT-03 · กรองช่วงวันที่ตามเวลาไทย (1.3s)
+  ✓  42 tests/e2e/part2.spec.ts:751:1 › TC-RBAC-01 · ประชาชนเปิดคำขอคนอื่นไม่ได้ (IDOR) (343ms)
+  ✓  43 tests/e2e/part2.spec.ts:769:1 › TC-RBAC-02 · เจ้าหน้าที่อนุมัติ SV-02 ไม่ได้ (API) (567ms)
+  ✓  44 tests/e2e/part2.spec.ts:788:1 › TC-RBAC-03 · ตารางสิทธิ์หน้า/API ตามบทบาท (4.1s)
+  ✓  45 tests/e2e/part2.spec.ts:840:1 › TC-RBAC-04 · ผู้ดูแลระบบ: บริการ วันหยุด ผู้ใช้ และยอดที่ล็อก (1.2s)
+  ✓  46 tests/e2e/part2.spec.ts:905:1 › TC-RBAC-05 · สิทธิ์เปิด/ดาวน์โหลดไฟล์แนบ (6.0s)
+  ✓  47 tests/e2e/part2.spec.ts:959:1 › TC-RBAC-06 · ผู้ดูแลระบบ: ช่วงค่าที่ยอมรับ (1.2s)
+  ✓  48 tests/e2e/part2.spec.ts:1008:1 › TC-NFR-01 · Responsive 375/768/1280 (2.5s)
+  ✓  49 tests/e2e/part2.spec.ts:1031:1 › TC-NFR-02 · WCAG axe คีย์บอร์ด label และข้อความสถานะ (6.3s)
+  ✓  50 tests/e2e/part2.spec.ts:1062:1 › TC-NFR-03 · Health เวลาโหลด และผลซ้ำได้ (1.4s)
+  ✓  51 tests/e2e/part2.spec.ts:1106:1 › TC-NFR-04 · เข้ารหัสข้อมูลส่วนบุคคลที่เก็บ (inspection) (278ms)
+
+
+  1) tests/e2e/part1.spec.ts:316:1 › TC-UPLOAD-01 ขนาดและจำนวนไฟล์ ─────────────────────────────────
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  locator('[data-testid="file-item"][data-name="size-5242880.pdf"]')
+    Expected: 1
+    Received: 0
+    Timeout:  10000ms
+
+    Call log:
+      - Expect "toHaveCount" locator('[data-testid="file-item"][data-name="size-5242880.pdf"]') with timeout 10000ms
+      - waiting for locator('[data-testid="file-item"][data-name="size-5242880.pdf"]')
+        24 × locator resolved to 0 elements
+           - unexpected value "0"
+
+
+       at helpers1.ts:156
+
+      154 |   // A client may reject invalid bytes before sending HTTP; assert UI and API independently.
+      155 |   await page.getByTestId(`upload-input-${key}`).setInputFiles(testFile(name, size));
+    > 156 |   if (status === 201) await expect(fileItem(page, name)).toHaveCount(1);
+          |                                                          ^
+      157 |   else await expect(page.getByTestId('upload-error')).toBeVisible();
+      158 | }
+      159 | export async function removeFile(page: Page, name: string) {
+        at uiUpload (/workspace/plans/egov-eservice/app/tests/e2e/helpers1.ts:156:58)
+        at /workspace/plans/egov-eservice/app/tests/e2e/part1.spec.ts:322:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../../../tmp/b14/results/part1-TC-UPLOAD-01-ขนาดและจำนวนไฟล์/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../../../tmp/b14/results/part1-TC-UPLOAD-01-ขนาดและจำนวนไฟล์/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../../../tmp/b14/results/part1-TC-UPLOAD-01-ขนาดและจำนวนไฟล์/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../../../tmp/b14/results/part1-TC-UPLOAD-01-ขนาดและจำนวนไฟล์/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    tests/e2e/part1.spec.ts:316:1 › TC-UPLOAD-01 ขนาดและจำนวนไฟล์ ──────────────────────────────────
+  50 passed (1.5m)

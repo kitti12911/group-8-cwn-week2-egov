@@ -1,0 +1,115 @@
+<%- include('partials/head') %>
+<%
+  // B05 · /citizen/new/:service — 3-step wizard (CONTRACT §2.5). Client logic: /static/js/citizen-apply.js
+  const d = state.draft;
+  const STEP_TEXT = { 1: '1/3 กรอกข้อมูล', 2: '2/3 แนบเอกสาร', 3: '3/3 ชำระเงิน' };
+  const isDraft = d.status === 'DRAFT';
+  const feeText = d.fee == null ? '–' : fmt.baht(d.fee);
+%>
+<style>
+  .wizard [hidden] { display: none !important; }
+  .stepper { display: flex; flex-wrap: wrap; gap: .25rem 1rem; list-style: none; padding: 0; margin: 0 0 .25rem; }
+  .stepper li { color: #4b5563; }
+  .stepper li[aria-current="step"] { color: #0b3d6e; font-weight: 700; text-decoration: underline; }
+  .wizard-step { font-weight: 700; }
+  .fee-line { font-size: 1.15rem; }
+  .fee-line output { font-weight: 700; }
+  .slot { border-top: 1px solid #d5d9e0; padding: .5rem 0; }
+  .slot input[type=file] { max-width: 100%; }
+  .file-list { list-style: none; padding: 0; margin: .3rem 0; }
+  .file-item { display: flex; flex-wrap: wrap; gap: .25rem .5rem; align-items: center; padding: .2rem 0; }
+  .file-item .file-name { font-weight: 600; overflow-wrap: anywhere; }
+  button.small { padding: .15rem .6rem; }
+  .alert-warn { color: #5c3d00; background: #fff4d6; border: 1px solid #e8c766; }
+  .qr { display: block; width: 200px; max-width: 100%; height: auto; border: 1px solid #d5d9e0; background: #fff; }
+  .qr-expired { opacity: .35; }
+  .pay-PAID { background: #e6f4ea; color: #0f5132; }
+  .pay-PENDING { background: #e0ecfb; color: #0b3d6e; }
+  .pay-EXPIRED { background: #fdecea; color: #8a1c12; }
+  .more-fields summary { cursor: pointer; margin: .5rem 0; }
+</style>
+<div class="wizard" id="wizard">
+  <p><a href="/citizen">← กลับไปคำขอของฉัน</a></p>
+  <h1>ยื่นคำขอ: <span data-testid="service-name"><%= svc.name %></span></h1>
+
+  <ol class="stepper" aria-label="ขั้นตอนการยื่นคำขอ">
+    <li data-step="1"<% if (state.step === 1) { %> aria-current="step"<% } %>>1 กรอกข้อมูล</li>
+    <li data-step="2"<% if (state.step === 2) { %> aria-current="step"<% } %>>2 แนบเอกสาร</li>
+    <li data-step="3"<% if (state.step === 3) { %> aria-current="step"<% } %>>3 ชำระเงิน</li>
+  </ol>
+  <p class="wizard-step" data-testid="wizard-step" aria-live="polite"><%= STEP_TEXT[state.step] %></p>
+  <p class="muted" id="draft-line"<% if (!d.draftId) { %> hidden<% } %>>รหัสร่าง: <strong data-testid="draft-id"><%= d.draftId || '' %></strong> · <%- statusTag(d.status, 'draft-status') %></p>
+
+  <!-- ── step 1: form + live fee ───────────────────────────── -->
+  <section class="card" id="step-1" aria-labelledby="h-step-1"<% if (state.step !== 1) { %> hidden<% } %>>
+    <h2 id="h-step-1">กรอกข้อมูล</h2>
+    <form id="form-1" novalidate>
+      <% if (svc.id === 'SV-01') { %>
+        <label for="qty-input">จำนวนฉบับ (1–5 ฉบับ · ฉบับละ <%= fmt.baht(svc.fee) %>)</label>
+        <input type="number" id="qty-input" name="qty" data-testid="qty-input" inputmode="numeric" step="1" min="1" max="5"
+               value="<%= d.qty == null ? '' : d.qty %>" aria-describedby="fee-error" <% if (!isDraft) { %>readonly<% } %>>
+      <% } else if (svc.id === 'SV-03') { %>
+        <label for="area-input">พื้นที่ก่อสร้าง/ต่อเติม (ตร.ม. จำนวนเต็ม 1–500)</label>
+        <input type="number" id="area-input" name="areaSqm" data-testid="area-input" inputmode="numeric" step="1" min="1" max="500"
+               value="<%= d.areaSqm == null ? '' : d.areaSqm %>" aria-describedby="fee-error fee-hint" <% if (!isDraft) { %>readonly<% } %>>
+        <p class="muted" id="fee-hint">1–100 ตร.ม. <%= fmt.baht(svc.fee) %> · 101–500 ตร.ม. <%= fmt.baht(svc.fee) %> + <%= fmt.baht(svc.feePerSqm) %> × (พื้นที่ − 100)</p>
+      <% } else { %>
+        <p>ค่าธรรมเนียมคงที่ ไม่ต้องกรอกจำนวน</p>
+      <% } %>
+      <p class="field-error" data-testid="fee-error" id="fee-error" role="alert" hidden></p>
+
+      <p class="fee-line">ค่าธรรมเนียม: <output data-testid="fee-total" id="fee-total" aria-live="polite"><%= feeText %></output></p>
+
+      <div class="actions">
+        <button type="submit" data-testid="to-upload-btn" id="to-upload-btn">ถัดไป: แนบเอกสาร</button>
+        <button type="button" class="secondary" data-testid="save-draft-btn" id="save-draft-btn">บันทึกร่าง</button>
+      </div>
+
+      <% if (formFields.length) { %>
+        <details class="more-fields"<% if (Object.keys(d.form || {}).length) { %> open<% } %>>
+          <summary>ข้อมูลเพิ่มเติม (ไม่บังคับ)</summary>
+          <% formFields.forEach(function (f) { %>
+            <label for="form-<%= f.key %>"><%= f.label %></label>
+            <input type="text" id="form-<%= f.key %>" name="<%= f.key %>" data-form-field="<%= f.key %>" maxlength="300"
+                   value="<%= (d.form || {})[f.key] || '' %>" <% if (!isDraft) { %>readonly<% } %>>
+          <% }) %>
+        </details>
+      <% } %>
+    </form>
+  </section>
+
+  <!-- ── step 2: uploads ───────────────────────────────────── -->
+  <section class="card" id="step-2" aria-labelledby="h-step-2"<% if (state.step !== 2) { %> hidden<% } %>>
+    <h2 id="h-step-2">แนบเอกสาร</h2>
+    <p class="muted">รองรับ PDF, JPG, PNG · ไฟล์ละไม่เกิน 5 MB · รวมไม่เกิน 5 ไฟล์ต่อคำขอ · ✱ = บังคับ</p>
+    <div class="alert alert-error" data-testid="upload-error" id="upload-error" role="alert" hidden></div>
+    <div id="slots">
+      <% state.docs.forEach(function (doc) { %>
+        <div class="slot" data-doc-key="<%= doc.key %>">
+          <label for="upload-<%= doc.key %>"><%= doc.name %><% if (doc.required) { %> ✱<span class="sr-only"> (บังคับ)</span><% } %><% if (doc.pdfOnly) { %> (PDF เท่านั้น)<% } %><% if (doc.multiple) { %> (เลือกได้หลายไฟล์)<% } %></label>
+          <input type="file" id="upload-<%= doc.key %>" data-testid="upload-input-<%= doc.key %>" data-doc-key="<%= doc.key %>"
+                 accept="<%= doc.pdfOnly ? '.pdf,application/pdf' : '.pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png' %>"<% if (doc.multiple) { %> multiple<% } %>>
+          <ul class="file-list" data-list-for="<%= doc.key %>" aria-label="ไฟล์ที่แนบ: <%= doc.name %>"></ul>
+        </div>
+      <% }) %>
+    </div>
+    <div id="missing-slot"></div>
+    <div class="actions">
+      <button type="button" class="secondary" id="back-to-1">ย้อนกลับ</button>
+      <button type="button" data-testid="to-payment-btn" id="to-payment-btn" disabled>ไปชำระเงิน</button>
+    </div>
+  </section>
+
+  <!-- ── step 3: payment (APIs by B06) ─────────────────────── -->
+  <section class="card" id="step-3" aria-labelledby="h-step-3"<% if (state.step !== 3) { %> hidden<% } %>>
+    <h2 id="h-step-3">ชำระเงิน (PromptPay QR จำลอง)</h2>
+    <p>ยอดที่ต้องชำระ: <strong data-testid="payment-amount" id="payment-amount"><%= feeText %></strong></p>
+    <div id="pay-box" aria-live="polite"></div>
+    <div class="actions" id="pay-actions">
+      <button type="button" class="secondary" id="back-to-2"<% if (!isDraft) { %> hidden<% } %>>ย้อนกลับ</button>
+    </div>
+  </section>
+</div>
+<script type="application/json" id="wizard-data"><%- stateJson %></script>
+<script src="/static/js/citizen-apply.js" defer></script>
+<%- include('partials/foot') %>
